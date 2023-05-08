@@ -6,15 +6,15 @@ import { useEmployees } from "./hooks/useEmployees"
 import { usePaginatedTransactions } from "./hooks/usePaginatedTransactions"
 import { useTransactionsByEmployee } from "./hooks/useTransactionsByEmployee"
 import { EMPTY_EMPLOYEE } from "./utils/constants"
-import { Employee } from "./utils/types"
+import { Employee, Transaction } from "./utils/types"
 
 export function App() {
   const { data: employees, ...employeeUtils } = useEmployees()
   const { data: paginatedTransactions, ...paginatedTransactionsUtils } = usePaginatedTransactions()
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [paginatedData, setPaginatedData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [paginatedData, setPaginatedData] = useState<Transaction[] | null>(null)
 
   const transactions = useMemo(
     () => paginatedData ?? transactionsByEmployee ?? null,
@@ -23,12 +23,11 @@ export function App() {
 
   const loadAllTransactions = useCallback(async () => {
     setIsLoading(true)
+
     transactionsByEmployeeUtils.invalidateData()
-
     await employeeUtils.fetchAll()
-    await paginatedTransactionsUtils.fetchAll()
-
     setIsLoading(false)
+    await paginatedTransactionsUtils.fetchAll()
   }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
 
   const loadTransactionsByEmployee = useCallback(
@@ -48,7 +47,7 @@ export function App() {
   useEffect(() => {
     if (paginatedTransactions && paginatedTransactions.data) {
       const newData = [...paginatedTransactions.data]
-      setPaginatedData((prev: any) => {
+      setPaginatedData((prev) => {
         if (prev) {
           return [...prev, ...newData]
         } else return [...newData]
@@ -92,7 +91,7 @@ export function App() {
           {transactions !== null && (
             <button
               className="RampButton"
-              disabled={paginatedTransactionsUtils.loading}
+              disabled={paginatedTransactionsUtils.loading || paginatedTransactionsUtils.isAllFetched}
               onClick={async () => {
                 await loadAllTransactions()
               }}
