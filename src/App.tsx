@@ -12,11 +12,13 @@ export function App() {
   const { data: employees, ...employeeUtils } = useEmployees()
   const { data: paginatedTransactions, ...paginatedTransactionsUtils } = usePaginatedTransactions()
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
+
   const [isLoading, setIsLoading] = useState(false)
+  const [paginatedData, setPaginatedData] = useState<any>(null)
 
   const transactions = useMemo(
-    () => paginatedTransactions?.data ?? transactionsByEmployee ?? null,
-    [paginatedTransactions, transactionsByEmployee]
+    () => paginatedData ?? transactionsByEmployee ?? null,
+    [paginatedData, transactionsByEmployee]
   )
 
   const loadAllTransactions = useCallback(async () => {
@@ -42,6 +44,19 @@ export function App() {
       loadAllTransactions()
     }
   }, [employeeUtils.loading, employees, loadAllTransactions])
+
+  useEffect(() => {
+    if (paginatedTransactions && paginatedTransactions.data) {
+      const newData = [...paginatedTransactions.data]
+      setPaginatedData((prev: any) => {
+        if (prev) {
+          return [...prev, ...newData]
+        } else return [...newData]
+      })
+    } else {
+      setPaginatedData(null)
+    }
+  }, [paginatedTransactions])
 
   return (
     <Fragment>
@@ -74,7 +89,6 @@ export function App() {
 
         <div className="RampGrid">
           <Transactions transactions={transactions} />
-
           {transactions !== null && (
             <button
               className="RampButton"
