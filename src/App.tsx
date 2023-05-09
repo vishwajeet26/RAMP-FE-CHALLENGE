@@ -14,6 +14,7 @@ export function App() {
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
 
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [employeesFilter, setEmployeesFilter] = useState<boolean>(false)
   const [paginatedData, setPaginatedData] = useState<Transaction[] | null>(null)
 
   const transactions = useMemo(
@@ -23,17 +24,18 @@ export function App() {
 
   const loadAllTransactions = useCallback(async () => {
     setIsLoading(true)
-
-    transactionsByEmployeeUtils.invalidateData()
+    setEmployeesFilter(false)
     await employeeUtils.fetchAll()
     setIsLoading(false)
     await paginatedTransactionsUtils.fetchAll()
-  }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
+  }, [employeeUtils, paginatedTransactionsUtils])
 
   const loadTransactionsByEmployee = useCallback(
     async (employeeId: string) => {
       paginatedTransactionsUtils.invalidateData()
+
       await transactionsByEmployeeUtils.fetchById(employeeId)
+      setEmployeesFilter(true)
     },
     [paginatedTransactionsUtils, transactionsByEmployeeUtils]
   )
@@ -88,19 +90,17 @@ export function App() {
 
         <div className="RampGrid">
           <Transactions transactions={transactions} />
-          {!paginatedTransactionsUtils.isAllFetched &&
-            !transactionsByEmployee &&
-            transactions !== null && (
-              <button
-                className="RampButton"
-                disabled={paginatedTransactionsUtils.loading}
-                onClick={async () => {
-                  await loadAllTransactions()
-                }}
-              >
-                View More
-              </button>
-            )}
+          {!paginatedTransactionsUtils.isAllFetched && !employeesFilter && transactions !== null && (
+            <button
+              className="RampButton"
+              disabled={paginatedTransactionsUtils.loading}
+              onClick={async () => {
+                await loadAllTransactions()
+              }}
+            >
+              View More
+            </button>
+          )}
         </div>
       </main>
     </Fragment>
